@@ -15,19 +15,15 @@ namespace PictureOrganizer
 
         public void OrganizeFiles(string sourceFolder, string destinationBaseFolder)
         {
-            //var sourceFolder = @"C:\Users\ben.cameron\Pictures\iphone\860OKMZO";
-            //var destinationBaseFolder = @"C:\Users\ben.cameron\Pictures\iphone\renamed";
-
-            List<MediaFile> files = GetFiles(sourceFolder);
-            MoveFiles(files, destinationBaseFolder);
+            List<MediaFile> files = this.GetFiles(sourceFolder);
+            this.MoveFiles(files, destinationBaseFolder);
         }
 
         #endregion
-        static void Main(string[] args)
-        {
-        }
 
-        private static List<MediaFile> GetFiles(string sourceFolder)
+        #region Private Methods
+
+        private List<MediaFile> GetFiles(string sourceFolder)
         {
             List<MediaFile> files = new List<MediaFile>();
 
@@ -39,11 +35,11 @@ namespace PictureOrganizer
             return files;
         }
 
-        private static void MoveFiles(List<MediaFile> files, string destinationBaseFolder)
+        private void MoveFiles(List<MediaFile> files, string destinationBaseFolder)
         {
             foreach (var sourceFile in files)
             {
-                string subFolder = GetFileSubfolder(sourceFile);
+                string subFolder = this.GetFileSubfolder(sourceFile);
                 string destinationFolder = Path.Combine(destinationBaseFolder, subFolder);
                 string newPath = Path.Combine(destinationFolder, sourceFile.SourceFileName);
 
@@ -63,13 +59,15 @@ namespace PictureOrganizer
             }
         }
 
-        private static string GetFileSubfolder(MediaFile sourceFile)
-        {
+        private string GetFileSubfolder(MediaFile sourceFile)
+        {            
             string year = sourceFile.DateTaken.Year.ToString();
             string monthNumber = sourceFile.DateTaken.ToString("MM");
             string monthName = sourceFile.DateTaken.ToString("MMM");
 
-            return string.Format(@"{0}\{1} - {2}", year, monthNumber, monthName);
+            return string.Format(@"{0}s\{1}\{2} - {3}", sourceFile.FileType.ToString(), year, monthNumber, monthName);
         }
+
+        #endregion
     }
 }

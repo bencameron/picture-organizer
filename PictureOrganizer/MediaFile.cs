@@ -19,6 +19,7 @@ namespace PictureOrganizer
 
         #region Private Fields
 
+        private Lazy<FileTypes> _fileType;
         private string _sourcePath;
         private DateTime _dateTaken = DateTime.MinValue;
 
@@ -28,57 +29,24 @@ namespace PictureOrganizer
 
         public MediaFile(string sourcePath)
         {
+            _fileType = new Lazy<FileTypes>(this.GetFileType, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
             _sourcePath = sourcePath;
         }
 
 	    #endregion
 
-        #region Private Methods
-
-        private DateTime GetDateTaken()
-        {
-            DateTime dateTaken = DateTime.MinValue;
-
-            if (Path.GetExtension(this.SourcePath).ToUpper() == ".JPG")
-            {
-                using (Image myImage = Image.FromFile(this.SourcePath))
-                {
-                    if (myImage.PropertyIdList.Contains(DateTakenPropertyId))
-                    {
-                        PropertyItem propItem = myImage.GetPropertyItem(DateTakenPropertyId);
-
-                        //Convert date taken metadata to a DateTime object
-                        string sdate = Encoding.UTF8.GetString(propItem.Value).Trim();
-                        string secondhalf = sdate.Substring(sdate.IndexOf(" "), (sdate.Length - sdate.IndexOf(" ")));
-                        string firsthalf = sdate.Substring(0, 10);
-                        firsthalf = firsthalf.Replace(":", "-");
-                        sdate = firsthalf + secondhalf;
-                        dateTaken = DateTime.Parse(sdate);
-                    }
-                }
-            }
-
-            if (dateTaken == DateTime.MinValue)
-            {
-                var dateCreated = File.GetCreationTime(this.SourcePath);
-                var dateModified = File.GetLastWriteTime(this.SourcePath);
-                
-                if (dateCreated < dateModified)
-                {
-                    dateTaken = dateCreated;
-                }
-                else
-                {
-                    dateTaken = dateModified;
-                }
-            }
-
-            return dateTaken;
-        }
-
-        #endregion
-
         #region Public Properties
+
+        public static List<string> PictureExtensions = new List<string>() { ".JPG", ".PNG", ".GIF" };
+        public static List<string> VideoExtensions = new List<string>() { ".MOV" };
+
+        public FileTypes FileType
+        {
+            get
+            {
+                return _fileType.Value;
+            }
+        }
 
         public string SourcePath
         {
@@ -115,6 +83,68 @@ namespace PictureOrganizer
 
                 return _dateTaken;
             }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private FileTypes GetFileType()
+        {
+            FileTypes ft = FileTypes.Unknown;
+            string extension = System.IO.Path.GetExtension(this.SourceFileName);
+
+            if (MediaFile.PictureExtensions.Any(pe => string.Compare(pe, extension, true) == 0))
+            {
+                ft = FileTypes.Picture;
+            }
+            else if (MediaFile.VideoExtensions.Any(pe => string.Compare(pe, extension, true) == 0))
+            {
+                ft = FileTypes.Video;
+            }
+
+            return ft;
+        }
+
+        private DateTime GetDateTaken()
+        {
+            DateTime dateTaken = DateTime.MinValue;
+
+            if (this.FileType == FileTypes.Picture)
+            {
+                using (Image myImage = Image.FromFile(this.SourcePath))
+                {
+                    if (myImage.PropertyIdList.Contains(DateTakenPropertyId))
+                    {
+                        PropertyItem propItem = myImage.GetPropertyItem(DateTakenPropertyId);
+
+                        //Convert date taken metadata to a DateTime object
+                        string sdate = Encoding.UTF8.GetString(propItem.Value).Trim();
+                        string secondhalf = sdate.Substring(sdate.IndexOf(" "), (sdate.Length - sdate.IndexOf(" ")));
+                        string firsthalf = sdate.Substring(0, 10);
+                        firsthalf = firsthalf.Replace(":", "-");
+                        sdate = firsthalf + secondhalf;
+                        dateTaken = DateTime.Parse(sdate);
+                    }
+                }
+            }
+
+            if (dateTaken == DateTime.MinValue)
+            {
+                var dateCreated = File.GetCreationTime(this.SourcePath);
+                var dateModified = File.GetLastWriteTime(this.SourcePath);
+                
+                if (dateCreated < dateModified)
+                {
+                    dateTaken = dateCreated;
+                }
+                else
+                {
+                    dateTaken = dateModified;
+                }
+            }
+
+            return dateTaken;
         }
 
         #endregion
